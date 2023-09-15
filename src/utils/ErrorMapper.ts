@@ -1,5 +1,4 @@
 import { SourceMapConsumer } from "source-map";
-
 export class ErrorMapper {
   // Cache consumer
   private static _consumer?: SourceMapConsumer;
