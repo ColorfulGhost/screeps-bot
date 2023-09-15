@@ -1,6 +1,7 @@
-export class Harvester {
-  public static run(creep: Creep) {
+import {log} from "../utils/utils";
 
+export default class Harvester {
+  public static run(creep: Creep): void {
     if (creep.store.getFreeCapacity() > 0) {
       const sources = creep.room.find(FIND_SOURCES);
       if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
@@ -9,17 +10,17 @@ export class Harvester {
       }
     } else {
 
-      let findTarget = creep.room.find(FIND_STRUCTURES, {
-        filter: (structure) => {
-          (structure.structureType == STRUCTURE_SPAWN ||
-            structure.structureType == STRUCTURE_CONTAINER ||
-            structure.structureType == STRUCTURE_TOWER) &&
-          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+      const controller = creep.room.controller;
+      if (controller != null && creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(controller);
+      }
+
+
+      for (let spawnName in Game.spawns) {
+        if (creep.transfer(Game.spawns[spawnName], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+          creep.moveTo(Game.spawns[spawnName]);
         }
-      });
-      let findTargetElement = findTarget[0];
-      console.log(creep.name + " GoTo " +findTargetElement)
-      creep.moveTo(findTargetElement, {visualizePathStyle: {stroke: '#6dff00'}});
+      }
     }
   }
 }

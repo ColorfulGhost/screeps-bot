@@ -1,57 +1,46 @@
 import {ErrorMapper} from "utils/ErrorMapper";
-import {Harvester} from "creeps/Harvester";
+import Harvester from "./creeps/Harvester";
 
-declare global {
-  interface Memory {
-    uuid: number;
-    log: any;
-  }
 
-  interface CreepMemory {
-    role: string;
-    room: string;
-    working: boolean;
-  }
-
-  namespace NodeJS {
-    interface Global {
-      log: any;
-    }
-  }
-}
 export const loop = ErrorMapper.wrapLoop(() => {
 
-  for (const name in Memory.creeps) {
-    // 清理死去的creeps
-    if (!(name in Game.creeps)) {
-      delete Memory.creeps[name];
-      console.log('Clearing non-existing creep memory:', name);
+  const harvester = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
+  if (harvester.length < 3) {
+    const name = 'harvester';
+    for (let spawnName in Game.spawns) {
+      let spawn = Game.spawns[spawnName];
+      let spawnCreep = spawn.spawnCreep([WORK, CARRY, MOVE], name + "-" + spawnName + "-" + Game.time);
+      if (spawnCreep == OK) {
+        Game.creeps[name].memory.role = "harvester"
+        break;
+      }
     }
   }
 
-
-  const harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvesters');
-  // console.log('Harvesters: ' + harvesters.length);
-  if (harvesters.length < 4) {
-    const name = 'Harvesters' + Game.time;
-    Game.spawns['Spawn1'].spawnCreep([WORK, CARRY,MOVE], name)
-    if (Game.creeps[name] != null) {
-      Game.creeps[name].memory.role = 'harvesters'
-    }
-  }
-
-  const upGrader = _.filter(Game.creeps, (creep) => creep.memory.role == 'upGrader');
-  if (upGrader.length < 5) {
-    const name = 'upGrader' + Game.time;
-
-    Game.spawns['Spawn1'].spawnCreep([WORK, CARRY,MOVE], name)
-    if (Game.creeps[name] != null) {
-      Game.creeps[name].memory.role = 'upGrader'
+  const upgrader = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
+  if (upgrader.length < 3) {
+    const name = 'upgrader';
+    for (let spawnName in Game.spawns) {
+      let spawn = Game.spawns[spawnName];
+      let spawnCreep = spawn.spawnCreep([WORK, CARRY, MOVE], name + "-" + spawnName + "-" + Game.time);
+      if (spawnCreep == OK) {
+        Game.creeps[name].memory.role = "upgrader"
+        break;
+      }
     }
   }
 
   for (const creepName in Game.creeps) {
     const creep = Game.creeps[creepName];
-    Harvester.run(creep)
+    // 清理死去的creeps
+    if (!(creep.name in Game.creeps)) {
+      delete Memory.creeps[creep.name];
+    }
+    // 还没出生就啥都不干
+    if (creep.spawning) {
+      if (creep.ticksToLive === CREEP_LIFE_TIME) creep._id = creep.id // 解决 this creep not exist 问题
+      return
+    }
+    Harvester.run(creep);
   }
 });
